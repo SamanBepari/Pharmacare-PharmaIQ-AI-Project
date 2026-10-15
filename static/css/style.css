@@ -1,0 +1,188 @@
+/* ── Globals ──────────────────────────────────────────── */
+:root {
+  --sidebar-width: 240px;
+  --navbar-height: 58px;
+  --primary: #1a6b3c;
+  --primary-dark: #145530;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f0f4f8;
+  color: #212529;
+}
+
+/* ── NAVBAR ───────────────────────────────────────────── */
+#mainNavbar {
+  background: linear-gradient(135deg, var(--primary) 0%, #2e8b57 100%) !important;
+  height: var(--navbar-height);
+  z-index: 1040;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+
+.brand-icon {
+  width: 34px; height: 34px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+
+.brand-text { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.5px; }
+
+.navbar-search { max-width: 420px; width: 100%; }
+.navbar-search .form-control,
+.navbar-search .input-group-text { border: none; border-radius: 0; font-size: 0.9rem; }
+.navbar-search .input-group { border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.15); }
+.navbar-search .form-control { background: rgba(255,255,255,0.95); }
+.navbar-search .btn-light { border-radius: 0; font-size: 0.85rem; }
+
+.avatar-sm {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.85rem; color: #fff;
+  flex-shrink: 0;
+}
+
+/* ── SIDEBAR ──────────────────────────────────────────── */
+#wrapper { padding-top: var(--navbar-height); min-height: 100vh; }
+
+#sidebar {
+  width: var(--sidebar-width);
+  min-height: calc(100vh - var(--navbar-height));
+  background: #fff;
+  border-right: 1px solid #e8ecf0;
+  flex-shrink: 0;
+  position: sticky;
+  top: var(--navbar-height);
+  height: calc(100vh - var(--navbar-height));
+  overflow-y: auto;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+}
+
+.sidebar-inner { padding: 1rem 0.5rem; }
+
+#sidebar .nav-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 8px;
+  font-size: 0.9rem; color: #495057;
+  font-weight: 500; transition: all 0.15s;
+  margin-bottom: 2px;
+}
+
+#sidebar .nav-link i { font-size: 1.05rem; width: 20px; text-align: center; flex-shrink: 0; }
+#sidebar .nav-link:hover { background: #f0f9f4; color: var(--primary); }
+#sidebar .nav-link.active { background: #e8f5ee; color: var(--primary); font-weight: 600; }
+
+.sidebar-divider {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 1px;
+  color: #adb5bd; padding: 14px 12px 4px; text-transform: uppercase;
+}
+
+/* ── PAGE CONTENT ─────────────────────────────────────── */
+#page-content {
+  flex: 1; min-width: 0;
+  padding: 24px;
+  overflow-x: hidden;
+}
+
+.flash-container { margin-bottom: 1rem; }
+
+.page-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e8ecf0;
+}
+
+.page-title {
+  font-weight: 700; color: #1a1a2e; margin-bottom: 0.25rem;
+}
+
+/* ── STAT CARDS ───────────────────────────────────────── */
+.stat-card .card-body { padding: 1.25rem; }
+.stat-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #6c757d; margin-bottom: 0.25rem; }
+.stat-value { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; line-height: 1; }
+.stat-link { font-size: 0.8rem; text-decoration: none; }
+.stat-link:hover { text-decoration: underline; }
+
+.stat-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; flex-shrink: 0;
+}
+
+/* ── MEDICINE THUMBNAIL ───────────────────────────────── */
+.med-thumb {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: #f0f4f8; display: flex;
+  align-items: center; justify-content: center;
+  color: #6c757d; flex-shrink: 0;
+}
+
+.med-placeholder {
+  width: 180px; height: 180px; border-radius: 16px;
+  background: #f8f9fa; display: flex;
+  align-items: center; justify-content: center;
+}
+
+/* ── ACTIVITY LOG ─────────────────────────────────────── */
+.log-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
+}
+.x-small { font-size: 0.75rem; }
+
+/* ── ROLE BADGES ──────────────────────────────────────── */
+.role-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; }
+.role-admin { background: #dc354520; color: #dc3545; border: 1px solid #dc354540; }
+.role-pharmacist { background: #0d6efd20; color: #0d6efd; border: 1px solid #0d6efd40; }
+.role-staff { background: #19875420; color: #198754; border: 1px solid #19875440; }
+
+/* ── PROFILE AVATAR ───────────────────────────────────── */
+.avatar-xl {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #2e8b57);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; font-weight: 700; color: white;
+}
+
+/* ── LOGIN PAGE ───────────────────────────────────────── */
+.login-page { background: linear-gradient(135deg, #0f4c2a 0%, #1a6b3c 50%, #2e8b57 100%); }
+.login-bg {
+  min-height: 100vh; display: flex;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.login-card { width: 100%; max-width: 440px; border-radius: 16px !important; }
+.login-logo {
+  width: 70px; height: 70px; border-radius: 16px;
+  background: linear-gradient(135deg, var(--primary), #2e8b57);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; color: white;
+}
+
+/* ── TABLES ───────────────────────────────────────────── */
+.table th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.table td { font-size: 0.9rem; vertical-align: middle; }
+
+/* ── CARDS ────────────────────────────────────────────── */
+.card { border-radius: 12px !important; }
+.card-header { border-radius: 12px 12px 0 0 !important; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 0.9rem 1.2rem; }
+
+/* ── MODALS ───────────────────────────────────────────── */
+.modal-content { border-radius: 16px !important; border: none; }
+.modal-header { border-radius: 16px 16px 0 0 !important; }
+
+/* ── PAGINATION ───────────────────────────────────────── */
+.page-link { border-radius: 6px !important; margin: 0 2px; font-size: 0.85rem; }
+
+/* ── RESPONSIVE ───────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root { --sidebar-width: 0px; }
+  #sidebar { display: none; }
+  #page-content { padding: 16px; }
+  .stat-value { font-size: 1.4rem; }
+  .navbar-search { max-width: 200px; }
+}

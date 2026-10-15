@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <div>
+    <h4 class="page-title"><i class="bi bi-bar-chart-fill me-2"></i>Reports & Analytics</h4>
+    <p class="text-muted mb-0">Inventory and sales overview</p>
+  </div>
+  <a href="{{ url_for('export_excel') }}" class="btn btn-success">
+    <i class="bi bi-file-earmark-excel me-1"></i>Export to Excel
+  </a>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm text-center p-3">
+      <div class="text-primary display-6 fw-bold">{{ by_type|length }}</div>
+      <div class="text-muted small">Medicine Categories</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm text-center p-3">
+      <div class="text-success display-6 fw-bold">${{ "%.0f"|format(total_inventory_value) }}</div>
+      <div class="text-muted small">Total Inventory Value</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm text-center p-3">
+      <div class="text-warning display-6 fw-bold">{{ low_stock_report|length }}</div>
+      <div class="text-muted small">Low Stock Items</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm text-center p-3">
+      <div class="text-danger display-6 fw-bold">{{ expiring_report|length }}</div>
+      <div class="text-muted small">Expiring Items</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <!-- By Type Chart -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header"><h6 class="mb-0 fw-semibold">Stock by Medicine Type</h6></div>
+      <div class="card-body"><canvas id="typeChart" height="200"></canvas></div>
+    </div>
+  </div>
+
+  <!-- By Type Table -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header"><h6 class="mb-0 fw-semibold">Inventory by Category</h6></div>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead class="table-light"><tr><th>Type</th><th>Count</th><th>Qty</th><th>Value</th></tr></thead>
+          <tbody>
+          {% for r in by_type %}
+          <tr>
+            <td>{{ r['medicine_type'] or 'Unknown' }}</td>
+            <td><span class="badge bg-primary">{{ r['count'] }}</span></td>
+            <td>{{ r['total_qty'] }}</td>
+            <td>${{ "%.2f"|format(r['total_value'] or 0) }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Low Stock Report -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h6 class="mb-0 fw-semibold"><i class="bi bi-sort-numeric-up me-2 text-warning"></i>Top 10 Low Stock</h6>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light"><tr><th>Medicine</th><th>Type</th><th>Price</th><th>Qty</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for m in low_stock_report %}
+      <tr>
+        <td><strong>{{ m['medicine_name'] }}</strong></td>
+        <td>{{ m['medicine_type'] or '—' }}</td>
+        <td>${{ "%.2f"|format(m['price'] or 0) }}</td>
+        <td>
+          {% if m['product_qty'] == 0 %}<span class="badge bg-danger">OUT</span>
+          {% else %}<span class="badge bg-warning text-dark">{{ m['product_qty'] }}</span>{% endif %}
+        </td>
+        <td>
+          <div class="progress" style="height:6px;width:80px">
+            <div class="progress-bar bg-danger" style="width:{{ [m['product_qty']*10, 100]|min }}%"></div>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Expiring Report -->
+{% if expiring_report %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header"><h6 class="mb-0 fw-semibold"><i class="bi bi-clock me-2 text-danger"></i>Expiring Within 30 Days</h6></div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light"><tr><th>Medicine</th><th>Company</th><th>Lot No</th><th>Expiry</th><th>Qty</th></tr></thead>
+      <tbody>
+      {% for m in expiring_report %}
+      <tr class="{% if m['exp_date'] < today %}table-danger{% else %}table-warning{% endif %}">
+        <td>{{ m['medicine_name'] }}</td>
+        <td>{{ m['company_name'] or '—' }}</td>
+        <td>{{ m['lot_no'] or '—' }}</td>
+        <td>{{ m['exp_date'] }}</td>
+        <td>{{ m['product_qty'] }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Sales Report -->
+{% if sales_summary %}
+<div class="card border-0 shadow-sm">
+  <div class="card-header"><h6 class="mb-0 fw-semibold"><i class="bi bi-cart me-2 text-success"></i>Sales Summary (Last 30 Days)</h6></div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light"><tr><th>Date</th><th>Transactions</th><th>Units Sold</th><th>Revenue</th></tr></thead>
+      <tbody>
+      {% for s in sales_summary %}
+      <tr>
+        <td>{{ s['day'] }}</td>
+        <td>{{ s['transactions'] }}</td>
+        <td>{{ s['units'] }}</td>
+        <td><strong>${{ "%.2f"|format(s['revenue'] or 0) }}</strong></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const typeLabels = {{ type_labels|safe }};
+const typeData   = {{ type_data|safe }};
+const colors = ['#0d6efd','#198754','#ffc107','#dc3545','#0dcaf0','#6f42c1','#fd7e14','#20c997'];
+
+new Chart(document.getElementById('typeChart'), {
+  type: 'bar',
+  data: {
+    labels: typeLabels,
+    datasets: [{
+      label: 'Total Qty',
+      data: typeData,
+      backgroundColor: colors.slice(0, typeLabels.length),
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true } }
+  }
+});
+</script>
+{% endblock %}

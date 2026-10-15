@@ -1,0 +1,10 @@
+# Optional PharmaIQ upgrades — the app works without any of these.
+# Install only what you need:  pip install -r requirements-optional.txt
+
+# Faster / better PDF text extraction (PharmaIQ falls back to pypdf if absent)
+pymupdf>=1.23
+
+# True semantic search instead of the default TF-IDF vectors.
+# Enable with:  PHARMAIQ_EMBEDDINGS=sentence-transformers   (downloads ~90 MB model on first use)
+sentence-transformers>=2.7
+faiss-cpu>=1.8

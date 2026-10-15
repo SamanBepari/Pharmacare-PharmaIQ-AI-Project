@@ -1,0 +1,69 @@
+<div class="row g-3">
+  <div class="col-md-4">
+    <label class="form-label fw-semibold">Medicine Name <span class="text-danger">*</span></label>
+    <input type="text" name="name" class="form-control" placeholder="e.g. Paracetamol 500mg" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label fw-semibold">Medicine Type</label>
+    <input type="text" name="type" class="form-control" placeholder="e.g. Tablet, Syrup, Injection">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label fw-semibold">Company Name</label>
+    <input type="text" name="company" class="form-control" placeholder="Manufacturer name">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label fw-semibold">Reference No</label>
+    <input type="text" name="ref_no" class="form-control" placeholder="REF-001">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label fw-semibold">Lot No</label>
+    <input type="text" name="lot" class="form-control" placeholder="LOT-2024-01">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label fw-semibold">Issue Date</label>
+    <input type="date" name="issue" class="form-control">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label fw-semibold">Expiry Date</label>
+    <input type="date" name="exp" class="form-control">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label fw-semibold">Price ($) <span class="text-danger">*</span></label>
+    <div class="input-group">
+      <span class="input-group-text">$</span>
+      <input type="number" step="0.01" min="0" name="price" class="form-control" placeholder="0.00" required>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label fw-semibold">Quantity <span class="text-danger">*</span></label>
+    <input type="number" min="0" name="qty" class="form-control" placeholder="0" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label fw-semibold">Dosage</label>
+    <input type="text" name="dosage" class="form-control" placeholder="e.g. 1 tablet twice daily">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label fw-semibold">Uses / Indications</label>
+    <textarea name="uses" class="form-control" rows="2" placeholder="What this medicine treats…"></textarea>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label fw-semibold">Side Effects</label>
+    <textarea name="side" class="form-control" rows="2" placeholder="Known side effects…"></textarea>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label fw-semibold">Precautions</label>
+    <textarea name="precaution" class="form-control" rows="2" placeholder="Warnings and precautions…"></textarea>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label fw-semibold">Barcode</label>
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-upc"></i></span>
+      <input type="text" name="barcode" class="form-control" placeholder="Scan or enter barcode number">
+    </div>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label fw-semibold">Medicine Image</label>
+    <input type="file" name="image" class="form-control" accept="image/*">
+    <div class="form-text">PNG, JPG, GIF up to 5MB</div>
+  </div>
+</div>

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}AI Evaluation{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+  <div><h4 class="page-title"><i class="bi bi-clipboard2-check me-2 text-success"></i>AI Evaluation</h4>
+  <p class="text-muted mb-0">Measures retrieval quality, SQL answer correctness (vs an independent oracle query) and safety guard-rails.</p></div>
+  <button id="run" class="btn btn-success"><i class="bi bi-play-fill me-1"></i>Run evaluation</button>
+</div>
+<div id="summary" class="row g-3 mb-4"></div>
+<div id="results"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+function mk(t, c, x) { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+document.getElementById('run').onclick = async function () {
+  this.disabled = true; const s = document.getElementById('summary'), out = document.getElementById('results');
+  s.replaceChildren(mk('div', 'text-muted', 'Running…')); out.replaceChildren();
+  const r = await (await fetch('/api/ai/evaluate', { method: 'POST', headers: { 'X-CSRF-Token': CSRF } })).json();
+  s.replaceChildren();
+  const pct = v => Math.round(v * 100) + '%';
+  [['SQL correctness', pct(r.summary.sql_pass_rate)], ['RAG pass rate', pct(r.summary.rag_pass_rate)], ['RAG hit@1', pct(r.summary.rag_hit_at_1)],
+   ['RAG hit@3', pct(r.summary.rag_hit_at_3)], ['Keyword recall', pct(r.summary.rag_keyword_recall)], ['Safety', pct(r.summary.safety_pass_rate)]].forEach(([k, v]) => {
+    const col = mk('div', 'col-6 col-md-2'), card = mk('div', 'card border-0 shadow-sm metric'); card.append(mk('div', 'v', v), mk('div', 'small text-muted', k)); col.appendChild(card); s.appendChild(col);
+  });
+  s.appendChild(mk('div', 'assume', r.summary.total_passed + ' / ' + r.summary.total_cases + ' cases passed · mode: ' + r.summary.mode));
+  [['sql', 'SQL / routing'], ['rag', 'Retrieval (RAG)'], ['safety', 'Safety & SQL guard']].forEach(([k, title]) => {
+    const card = mk('div', 'card border-0 shadow-sm mb-3'); card.appendChild(mk('div', 'card-header bg-white fw-semibold', title));
+    const tb = mk('table', 'table table-sm mb-0 small'), tbody = mk('tbody');
+    r[k].forEach(x => { const tr = mk('tr'); tr.append(mk('td', x.passed ? 'score-pass' : 'score-fail', x.passed ? 'PASS' : 'FAIL'), mk('td', 'text-muted', x.id), mk('td', null, x.question), mk('td', 'text-muted', x.detail)); tbody.appendChild(tr); });
+    tb.appendChild(tbody); const w = mk('div', 'table-responsive'); w.appendChild(tb); card.appendChild(w); out.appendChild(card);
+  });
+  this.disabled = false;
+};
+</script>{% endblock %}

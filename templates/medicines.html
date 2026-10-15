@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}Medicines{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-wrap justify-content-between align-items-start gap-2">
+  <div>
+    <h4 class="page-title"><i class="bi bi-capsule me-2"></i>Medicines Inventory</h4>
+    <p class="text-muted mb-0">{{ total }} medicines total</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('barcode_page') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-upc-scan me-1"></i>Scan Barcode
+    </a>
+    {% if session.role in ['admin','pharmacist'] %}
+    <a href="{{ url_for('export_excel') }}" class="btn btn-success btn-sm">
+      <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+    </a>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMedModal">
+      <i class="bi bi-plus-circle me-1"></i>Add Medicine
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Search -->
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form action="{{ url_for('medicines') }}" method="get" class="d-flex gap-2 flex-wrap align-items-center">
+      <div class="input-group flex-grow-1" style="max-width:450px">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" name="search" class="form-control" placeholder="Search by name, company, type, barcode…"
+               value="{{ search }}">
+        {% if search %}
+        <a href="{{ url_for('medicines') }}" class="btn btn-outline-secondary">Clear</a>
+        {% endif %}
+        <button class="btn btn-primary" type="submit">Search</button>
+      </div>
+      {% if search %}
+      <span class="badge bg-info">Results for: "{{ search }}"</span>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Medicines table -->
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th style="width:50px">#</th>
+          <th>Medicine</th>
+          <th>Company / Type</th>
+          <th>Lot / Ref</th>
+          <th>Expiry</th>
+          <th>Price</th>
+          <th>Stock</th>
+          <th>Status</th>
+          <th style="width:120px">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for m in medicines %}
+      <tr class="{% if m['exp_date'] and m['exp_date'] < today %}table-danger
+                 {% elif m['exp_date'] and m['exp_date'] <= warn_date %}table-warning
+                 {% elif m['product_qty'] <= low_threshold %}table-warning{% endif %}">
+        <td><small class="text-muted">{{ m['id'] }}</small></td>
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            {% if m['image_filename'] %}
+            <img src="{{ url_for('static', filename='uploads/' + m['image_filename']) }}"
+                 class="rounded" style="width:36px;height:36px;object-fit:cover;" alt="">
+            {% else %}
+            <div class="med-thumb"><i class="bi bi-capsule"></i></div>
+            {% endif %}
+            <div>
+              <div class="fw-semibold">{{ m['medicine_name'] }}</div>
+              {% if m['barcode'] %}<small class="text-muted"><i class="bi bi-upc me-1"></i>{{ m['barcode'] }}</small>{% endif %}
+            </div>
+          </div>
+        </td>
+        <td>
+          <div>{{ m['company_name'] or '—' }}</div>
+          <small class="badge bg-secondary-subtle text-secondary border">{{ m['medicine_type'] or '—' }}</small>
+        </td>
+        <td>
+          <small>{{ m['lot_no'] or '—' }}</small><br>
+          <small class="text-muted">{{ m['ref_no'] or '—' }}</small>
+        </td>
+        <td>
+          {% if m['exp_date'] %}
+          <small class="{% if m['exp_date'] < today %}text-danger fw-bold{% elif m['exp_date'] <= warn_date %}text-warning fw-bold{% endif %}">
+            {{ m['exp_date'] }}
+          </small>
+          {% else %}<span class="text-muted">—</span>{% endif %}
+        </td>
+        <td>${{ "%.2f"|format(m['price'] or 0) }}</td>
+        <td>
+          {% if (m['product_qty'] or 0) <= low_threshold %}
+          <span class="badge bg-danger">{{ m['product_qty'] }}</span>
+          {% elif (m['product_qty'] or 0) <= low_threshold * 2 %}
+          <span class="badge bg-warning text-dark">{{ m['product_qty'] }}</span>
+          {% else %}
+          <span class="badge bg-success">{{ m['product_qty'] }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if m['exp_date'] and m['exp_date'] < today %}
+          <span class="badge bg-danger">Expired</span>
+          {% elif m['exp_date'] and m['exp_date'] <= warn_date %}
+          <span class="badge bg-warning text-dark">Expiring</span>
+          {% elif (m['product_qty'] or 0) <= low_threshold %}
+          <span class="badge bg-info text-white">Low Stock</span>
+          {% else %}
+          <span class="badge bg-success">OK</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="d-flex gap-1">
+            <a href="{{ url_for('medicine_detail', id=m['id']) }}"
+               class="btn btn-sm btn-outline-primary" title="View">
+              <i class="bi bi-eye"></i>
+            </a>
+            {% if session.role in ['admin','pharmacist'] %}
+            <button class="btn btn-sm btn-outline-warning edit-btn" title="Edit"
+              data-id="{{ m['id'] }}"
+              data-ref="{{ m['ref_no'] }}" data-company="{{ m['company_name'] }}"
+              data-type="{{ m['medicine_type'] }}" data-name="{{ m['medicine_name'] }}"
+              data-lot="{{ m['lot_no'] }}" data-issue="{{ m['issue_date'] }}"
+              data-exp="{{ m['exp_date'] }}" data-uses="{{ m['uses'] }}"
+              data-side="{{ m['side_effect'] }}" data-precaution="{{ m['precautions'] }}"
+              data-dosage="{{ m['dosage'] }}" data-price="{{ m['price'] }}"
+              data-qty="{{ m['product_qty'] }}" data-barcode="{{ m['barcode'] }}"
+              data-bs-toggle="modal" data-bs-target="#editMedModal">
+              <i class="bi bi-pencil"></i>
+            </button>
+            {% endif %}
+            {% if session.role == 'admin' %}
+            <a href="{{ url_for('delete_medicine', id=m['id']) }}"
+               class="btn btn-sm btn-outline-danger"
+               onclick="return confirm('Delete {{ m['medicine_name'] }}?')" title="Delete">
+              <i class="bi bi-trash"></i>
+            </a>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="9" class="text-center py-5 text-muted">
+          <i class="bi bi-inbox display-4 d-block mb-2"></i>
+          {% if search %}No medicines found for "{{ search }}"{% else %}No medicines yet. Add your first one!{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if pages > 1 %}
+  <div class="card-footer bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <small class="text-muted">Showing {{ ((page-1)*per)+1 }}–{{ [page*per, total]|min }} of {{ total }}</small>
+    <nav>
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item {% if page==1 %}disabled{% endif %}">
+          <a class="page-link" href="?page={{ page-1 }}&search={{ search }}">«</a>
+        </li>
+        {% for p in range(1, pages+1) %}
+        <li class="page-item {% if p==page %}active{% endif %}">
+          <a class="page-link" href="?page={{ p }}&search={{ search }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li class="page-item {% if page==pages %}disabled{% endif %}">
+          <a class="page-link" href="?page={{ page+1 }}&search={{ search }}">»</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── ADD MEDICINE MODAL ─────────────────────────────── -->
+{% if session.role in ['admin','pharmacist'] %}
+<div class="modal fade" id="addMedModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Add New Medicine</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('add_medicine') }}" method="post" enctype="multipart/form-data">
+        <div class="modal-body">
+          {% include "_medicine_form.html" %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Add Medicine</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── EDIT MEDICINE MODAL ────────────────────────────── -->
+<div class="modal fade" id="editMedModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Medicine</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editMedForm" action="" method="post" enctype="multipart/form-data">
+        <div class="modal-body" id="editMedBody">
+          {% include "_medicine_form.html" %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning"><i class="bi bi-save me-1"></i>Update Medicine</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.edit-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const d = this.dataset;
+    const form = document.getElementById('editMedForm');
+    form.action = `/update_medicine/${d.id}`;
+    const b = document.getElementById('editMedBody');
+    const fields = {ref_no:d.ref, company:d.company, type:d.type, name:d.name,
+                    lot:d.lot, issue:d.issue, exp:d.exp, uses:d.uses,
+                    side:d.side, precaution:d.precaution, dosage:d.dosage,
+                    price:d.price, qty:d.qty, barcode:d.barcode};
+    for (const [key, val] of Object.entries(fields)) {
+      const el = b.querySelector(`[name="${key}"]`);
+      if (el) el.value = val || '';
+    }
+  });
+});
+</script>
+{% endblock %}

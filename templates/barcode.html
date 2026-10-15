@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Barcode Scanner{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h4 class="page-title"><i class="bi bi-upc-scan me-2"></i>Barcode Scanner</h4>
+  <p class="text-muted mb-0">Scan a medicine barcode to look it up instantly</p>
+</div>
+
+<div class="row g-3 justify-content-center">
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <ul class="nav nav-tabs mb-3" id="scanTabs">
+          <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#cameraTab">
+              <i class="bi bi-camera me-1"></i>Camera Scan
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#manualTab">
+              <i class="bi bi-keyboard me-1"></i>Manual Entry
+            </a>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="cameraTab">
+            <div id="scanner-container" class="rounded overflow-hidden bg-dark" style="height:280px;position:relative">
+              <div id="interactive" class="viewport" style="width:100%;height:100%"></div>
+              <div id="scan-overlay" class="d-flex align-items-center justify-content-center h-100 text-white">
+                <div class="text-center">
+                  <i class="bi bi-camera display-4 mb-2 d-block"></i>
+                  <p>Click "Start Scanner" to begin</p>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 d-flex gap-2 justify-content-center">
+              <button id="startBtn" class="btn btn-primary" onclick="startScanner()">
+                <i class="bi bi-play-fill me-1"></i>Start Scanner
+              </button>
+              <button id="stopBtn" class="btn btn-danger d-none" onclick="stopScanner()">
+                <i class="bi bi-stop-fill me-1"></i>Stop
+              </button>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="manualTab">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Enter Barcode Number</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-upc"></i></span>
+                <input type="text" id="manualBarcode" class="form-control form-control-lg"
+                       placeholder="Type or paste barcode…">
+                <button class="btn btn-primary" onclick="lookupBarcode(document.getElementById('manualBarcode').value)">
+                  <i class="bi bi-search me-1"></i>Lookup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result Card -->
+    <div id="resultCard" class="card border-0 shadow-sm mt-3 d-none">
+      <div class="card-header bg-success text-white">
+        <h6 class="mb-0"><i class="bi bi-check-circle me-2"></i>Medicine Found</h6>
+      </div>
+      <div class="card-body" id="resultBody"></div>
+    </div>
+
+    <div id="notFoundCard" class="card border-0 shadow-sm mt-3 d-none border-danger">
+      <div class="card-body text-center text-danger py-4">
+        <i class="bi bi-x-circle display-4 mb-2 d-block"></i>
+        <h6>Barcode not found in system</h6>
+        <p class="text-muted mb-0" id="notFoundCode"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent scans log -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-semibold">Recent Scans</h6>
+        <button class="btn btn-sm btn-outline-secondary" onclick="clearHistory()">Clear</button>
+      </div>
+      <ul class="list-group list-group-flush" id="scanHistory">
+        <li class="list-group-item text-muted text-center py-3">No scans yet</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let scanHistory = [];
+
+function startScanner() {
+  document.getElementById('scan-overlay').style.display = 'none';
+  document.getElementById('startBtn').classList.add('d-none');
+  document.getElementById('stopBtn').classList.remove('d-none');
+
+  Quagga.init({
+    inputStream: { name: "Live", type: "LiveStream",
+      target: document.querySelector('#interactive'),
+      constraints: { facingMode: "environment" }
+    },
+    decoder: { readers: ["code_128_reader","ean_reader","ean_8_reader","code_39_reader","upc_reader"] }
+  }, function(err) {
+    if (err) {
+      alert("Camera error: " + err.message);
+      stopScanner();
+      return;
+    }
+    Quagga.start();
+  });
+
+  Quagga.onDetected(function(result) {
+    const code = result.codeResult.code;
+    stopScanner();
+    lookupBarcode(code);
+  });
+}
+
+function stopScanner() {
+  try { Quagga.stop(); } catch(e) {}
+  document.getElementById('scan-overlay').style.display = 'flex';
+  document.getElementById('startBtn').classList.remove('d-none');
+  document.getElementById('stopBtn').classList.add('d-none');
+}
+
+async function lookupBarcode(code) {
+  if (!code) return;
+  document.getElementById('resultCard').classList.add('d-none');
+  document.getElementById('notFoundCard').classList.add('d-none');
+
+  try {
+    const res = await fetch(`/api/barcode/${encodeURIComponent(code)}`);
+    addHistory(code, res.ok);
+    if (res.ok) {
+      const med = await res.json();
+      showResult(med);
+    } else {
+      document.getElementById('notFoundCard').classList.remove('d-none');
+      document.getElementById('notFoundCode').textContent = 'Barcode: ' + code;
+    }
+  } catch(e) {
+    alert('Lookup failed: ' + e.message);
+  }
+}
+
+function showResult(m) {
+  const card = document.getElementById('resultCard');
+  const body = document.getElementById('resultBody');
+  const isLow = (m.product_qty || 0) <= 10;
+  body.innerHTML = `
+    <div class="row g-2 align-items-center">
+      <div class="col-auto">
+        ${m.image_filename
+          ? `<img src="/static/uploads/${m.image_filename}" class="rounded" style="width:60px;height:60px;object-fit:cover">`
+          : `<div class="med-thumb"><i class="bi bi-capsule fs-4"></i></div>`}
+      </div>
+      <div class="col">
+        <h5 class="fw-bold mb-1">${m.medicine_name}</h5>
+        <p class="text-muted mb-0">${m.company_name || ''} • ${m.medicine_type || ''}</p>
+      </div>
+    </div>
+    <hr>
+    <div class="row g-2 mt-1">
+      <div class="col-6"><small class="text-muted">Price</small><div class="fw-bold">$${(m.price||0).toFixed(2)}</div></div>
+      <div class="col-6"><small class="text-muted">Stock</small>
+        <div><span class="badge ${isLow ? 'bg-danger' : 'bg-success'}">${m.product_qty} units</span></div>
+      </div>
+      <div class="col-6"><small class="text-muted">Expiry</small><div>${m.exp_date || '—'}</div></div>
+      <div class="col-6"><small class="text-muted">Dosage</small><div>${m.dosage || '—'}</div></div>
+    </div>
+    <div class="mt-3">
+      <a href="/medicine/${m.id}" class="btn btn-primary btn-sm"><i class="bi bi-eye me-1"></i>View Details</a>
+    </div>`;
+  card.classList.remove('d-none');
+}
+
+function addHistory(code, found) {
+  scanHistory.unshift({code, found, time: new Date().toLocaleTimeString()});
+  if (scanHistory.length > 10) scanHistory.pop();
+  const ul = document.getElementById('scanHistory');
+  ul.innerHTML = scanHistory.map(s => `
+    <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+      <div><code>${s.code}</code><br><small class="text-muted">${s.time}</small></div>
+      <span class="badge ${s.found ? 'bg-success' : 'bg-danger'}">${s.found ? 'Found' : 'Not Found'}</span>
+    </li>`).join('');
+}
+
+function clearHistory() {
+  scanHistory = [];
+  document.getElementById('scanHistory').innerHTML = '<li class="list-group-item text-muted text-center py-3">No scans yet</li>';
+}
+
+document.getElementById('manualBarcode').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') lookupBarcode(this.value);
+});
+</script>
+{% endblock %}

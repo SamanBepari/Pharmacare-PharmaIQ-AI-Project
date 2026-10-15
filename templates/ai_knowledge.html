@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Knowledge Base{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h4 class="page-title"><i class="bi bi-book me-2 text-primary"></i>Knowledge Base</h4>
+  <p class="text-muted mb-0">Approved medicine leaflets and pharmacy SOPs that PharmaIQ can cite · retrieval: <code>{{ backend }}</code></p>
+  {% if backend_note %}<div class="warn-box mt-2">{{ backend_note }}</div>{% endif %}
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+        <span>Documents ({{ docs|length }})</span>
+        {% if can_delete %}
+        <form method="post" action="{{ url_for('pharmaiq.kb_load_samples') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-outline-primary"><i class="bi bi-cloud-download me-1"></i>Load sample documents</button>
+        </form>{% endif %}
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light"><tr><th>Title</th><th>Type</th><th>Visible to</th><th>Passages</th><th>Added</th>{% if can_delete %}<th></th>{% endif %}</tr></thead>
+          <tbody>
+          {% for d in docs %}
+          <tr>
+            <td><div class="fw-semibold">{{ d.title }}</div><small class="text-muted">{{ d.filename }}</small></td>
+            <td><span class="badge {{ 'bg-info text-dark' if d.doc_type=='leaflet' else 'bg-secondary' }}">{{ d.doc_type }}</span></td>
+            <td><span class="badge bg-light text-dark border">{{ d.min_role }}+</span></td>
+            <td>{{ d.chunk_count }}</td>
+            <td><small>{{ d.created_at[:10] }}</small></td>
+            {% if can_delete %}<td>
+              <form method="post" action="{{ url_for('pharmaiq.kb_delete', doc_id=d.id) }}" data-confirm="Delete this document and its passages?" onsubmit="return confirm(this.dataset.confirm)">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              </form></td>{% endif %}
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center text-muted py-4">No documents yet.{% if can_delete %} Click “Load sample documents” or upload your own.{% endif %}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    {% if can_upload %}
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-white fw-semibold"><i class="bi bi-upload me-1"></i>Upload a document</div>
+      <form class="card-body" method="post" action="{{ url_for('pharmaiq.kb_upload') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-2"><label class="form-label small mb-1">File (PDF, DOCX, TXT, MD · max 5 MB)</label>
+          <input type="file" name="document" class="form-control form-control-sm" accept=".pdf,.docx,.txt,.md" required></div>
+        <div class="mb-2"><label class="form-label small mb-1">Title (optional)</label>
+          <input type="text" name="title" class="form-control form-control-sm" maxlength="200"></div>
+        <div class="row g-2 mb-3">
+          <div class="col-6"><label class="form-label small mb-1">Type</label>
+            <select name="doc_type" class="form-select form-select-sm"><option value="leaflet">Leaflet</option><option value="sop">SOP</option><option value="reference">Reference</option></select></div>
+          <div class="col-6"><label class="form-label small mb-1">Visible to</label>
+            <select name="min_role" class="form-select form-select-sm"><option value="staff">All staff</option><option value="pharmacist">Pharmacists+</option>{% if session.role=='admin' %}<option value="admin">Admins only</option>{% endif %}</select></div>
+        </div>
+        <button class="btn btn-success btn-sm w-100"><i class="bi bi-cloud-arrow-up me-1"></i>Upload &amp; index</button>
+        <div class="assume mt-2">Only upload approved, current material. Scanned PDFs need OCR first.</div>
+      </form>
+    </div>
+    {% endif %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white fw-semibold"><i class="bi bi-search me-1"></i>Test retrieval</div>
+      <div class="card-body">
+        <div class="input-group input-group-sm mb-2"><input id="kbq" class="form-control" placeholder="e.g. insulin storage"><button id="kbgo" class="btn btn-outline-primary">Search</button></div>
+        <div id="kbres" class="small"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('kbgo').addEventListener('click', async () => {
+  const q = document.getElementById('kbq').value.trim(), box = document.getElementById('kbres'); if (!q) return;
+  box.replaceChildren(); const r = await (await fetch('/api/ai/knowledge/search?q=' + encodeURIComponent(q))).json();
+  (r.hits || []).forEach(h => {
+    const d = document.createElement('div'); d.className = 'source-card';
+    const t = document.createElement('div'); t.className = 'fw-semibold'; t.textContent = (h.relevant ? '✔ ' : '✖ ') + h.title + (h.section ? ' › ' + h.section : '');
+    const s = document.createElement('div'); s.className = 'text-muted'; s.textContent = 'keyword ' + h.bm25 + ' · vector ' + h.vector + ' · coverage ' + h.coverage;
+    const x = document.createElement('div'); x.textContent = h.snippet.slice(0, 160) + '…';
+    d.append(t, s, x); box.appendChild(d);
+  });
+  if (!(r.hits || []).length) box.textContent = 'No matches.';
+});
+</script>{% endblock %}

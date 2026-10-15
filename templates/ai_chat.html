@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Ask PharmaIQ{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+  <div>
+    <h4 class="page-title"><i class="bi bi-stars me-2" style="color:#6f42c1"></i>Ask PharmaIQ</h4>
+    <p class="text-muted mb-0">Natural-language questions about live inventory &amp; sales, plus approved leaflets and SOPs.</p>
+  </div>
+  <div class="d-flex gap-2 align-items-center">
+    <span class="badge bg-light text-dark border mode-pill" title="How questions are planned and explained"><i class="bi bi-cpu me-1"></i>{{ provider_label }}</span>
+    <button class="btn btn-sm btn-outline-secondary" id="newChat"><i class="bi bi-plus-circle me-1"></i>New chat</button>
+  </div>
+</div>
+
+<div class="ai-shell">
+  <div class="ai-main">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body pb-2">
+        <div id="thread" class="ai-thread" aria-live="polite"></div>
+        <div class="ask-box">
+          <form id="askForm" class="input-group">
+            <input id="question" class="form-control form-control-lg" maxlength="600" autocomplete="off"
+                   placeholder="e.g. Which medicines are expiring within the next 30 days?">
+            <button id="sendBtn" class="btn btn-success px-4" type="submit"><i class="bi bi-send-fill"></i></button>
+          </form>
+          <div class="assume mt-1"><i class="bi bi-shield-check me-1"></i>Reference &amp; analytics only — no personal dosing, diagnosis or treatment advice.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-side">
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-white fw-semibold small"><i class="bi bi-lightbulb me-1 text-warning"></i>Try asking</div>
+      <div class="card-body py-2">
+        <div class="small text-muted mb-1">Live data</div>
+        <span class="chip" data-q="Which medicines are expiring within the next 30 days, and what is their current stock?">Expiring in 30 days</span>
+        <span class="chip" data-q="Show all products with fewer than 10 units">Fewer than 10 units</span>
+        <span class="chip" data-q="Which categories generated the highest sales this month?">Top categories</span>
+        <span class="chip" data-q="Give me a management summary">Management summary</span>
+        {% if role in ['admin','pharmacist'] %}
+        <span class="chip" data-q="Forecast demand for the next 14 days">Forecast demand</span>
+        <span class="chip" data-q="Any unusual sales spikes?">Find anomalies</span>
+        <span class="chip" data-q="What should we reorder?">Reorder suggestions</span>
+        {% endif %}
+        <div class="small text-muted mt-2 mb-1">Documents</div>
+        <span class="chip" data-q="What is the return policy?">Return policy</span>
+        <span class="chip" data-q="How should insulin be stored?">Insulin storage</span>
+        <span class="chip" data-q="What are the side effects of metformin?">Metformin side effects</span>
+        <span class="chip" data-q="What is the procedure for expired stock?">Expired stock SOP</span>
+      </div>
+    </div>
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white fw-semibold small"><i class="bi bi-info-circle me-1 text-info"></i>How to read answers</div>
+      <div class="card-body small">
+        <div class="mb-2"><span class="sect-label sect-db"><i class="bi bi-database-check"></i>Database facts</span><br>Real rows from the live DB. Click <em>Show query</em> to see the exact SQL.</div>
+        <div class="mb-2"><span class="sect-label sect-doc"><i class="bi bi-book"></i>From documents</span><br>Passages from approved leaflets/SOPs with numbered sources.</div>
+        <div><span class="sect-label sect-ai"><i class="bi bi-stars"></i>Explanation</span><br>Short commentary, labelled rule-based or AI-generated. Never the source of numbers.</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/ai.js') }}"></script>{% endblock %}

@@ -1,0 +1,17 @@
+[
+  {"id": "rag-01", "question": "What is the return policy?", "expect_doc": "Returns and Refunds", "keywords": ["return", "pharmacist"]},
+  {"id": "rag-02", "question": "How should insulin be stored?", "expect_doc": "Insulin Glargine", "keywords": ["refrigerator", "2 to 8", "freeze"]},
+  {"id": "rag-03", "question": "What are the side effects of metformin?", "expect_doc": "Metformin", "keywords": ["nausea", "diarrhoea"]},
+  {"id": "rag-04", "question": "What do we do with expired medicines?", "expect_doc": "Expired, Damaged", "keywords": ["quarantine", "expired"]},
+  {"id": "rag-05", "question": "Who can have an allergy to amoxicillin?", "expect_doc": "Amoxicillin", "keywords": ["penicillin"]},
+  {"id": "rag-06", "question": "What temperature should the pharmacy fridge be?", "expect_doc": "Storage and Cold Chain", "keywords": ["2", "8"]},
+  {"id": "rag-07", "question": "What is warfarin used for?", "expect_doc": "Warfarin", "keywords": ["clot"]},
+  {"id": "rag-08", "question": "How are controlled medicines stored?", "expect_doc": "Controlled and High-Alert", "keywords": ["locked"]},
+  {"id": "rag-09", "question": "paracetmol overdose liver damage", "expect_doc": "Paracetamol", "keywords": ["liver"]},
+  {"id": "rag-10", "question": "How should the salbutamol inhaler be stored?", "expect_doc": "Salbutamol", "keywords": ["sunlight"]},
+  {"id": "rag-11", "question": "What is the reorder rule for low stock?", "expect_doc": "Stock Control", "keywords": ["10 units"]},
+  {"id": "rag-12", "question": "Who may give advice about which medicine to take?", "expect_doc": "Counselling", "keywords": ["pharmacist"]},
+  {"id": "rag-n1", "question": "Who won the football world cup?", "expect_no_answer": true},
+  {"id": "rag-n2", "question": "What is the capital of France?", "expect_no_answer": true},
+  {"id": "rag-n3", "question": "Explain quantum computing", "expect_no_answer": true}
+]

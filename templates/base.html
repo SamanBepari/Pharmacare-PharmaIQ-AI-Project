@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}PharmaCare{% endblock %} — Pharmacy Management</title>
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ai.css') }}"/>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- ── TOP NAVBAR ─────────────────────────────────────── -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNavbar">
+  <div class="container-fluid px-3">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('dashboard') }}">
+      <div class="brand-icon"><i class="bi bi-capsule-pill"></i></div>
+      <span class="brand-text">PharmaCare</span><span class="badge bg-light text-success ms-1 ai-brand-badge">+ PharmaIQ</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <!-- Search Bar -->
+      <form class="d-flex mx-auto navbar-search" action="{{ url_for('medicines') }}" method="get">
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0">
+            <i class="bi bi-search text-muted"></i>
+          </span>
+          <input class="form-control border-start-0 ps-0" type="search" name="search"
+                 placeholder="Search medicines, companies…" aria-label="Search">
+          <button class="btn btn-light" type="submit">Search</button>
+        </div>
+      </form>
+      <!-- Right side -->
+      <ul class="navbar-nav ms-auto align-items-center gap-2">
+        <!-- Alert bell -->
+        <li class="nav-item dropdown">
+          <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown">
+            <i class="bi bi-bell-fill fs-5"></i>
+            {% if nav_expiring + nav_low_stock > 0 %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+              {{ nav_expiring + nav_low_stock }}
+            </span>
+            {% endif %}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width:300px">
+            <li><h6 class="dropdown-header">Notifications</h6></li>
+            {% if nav_expiring %}
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2" href="{{ url_for('alerts') }}">
+                <span class="badge bg-warning text-dark">{{ nav_expiring }}</span>
+                Medicines expiring soon
+              </a>
+            </li>
+            {% endif %}
+            {% if nav_low_stock %}
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2" href="{{ url_for('alerts') }}">
+                <span class="badge bg-danger">{{ nav_low_stock }}</span>
+                Low stock items
+              </a>
+            </li>
+            {% endif %}
+            {% if not nav_expiring and not nav_low_stock %}
+            <li><span class="dropdown-item text-muted">No alerts 🎉</span></li>
+            {% endif %}
+          </ul>
+        </li>
+        <!-- User menu -->
+        <li class="nav-item dropdown">
+          <a class="nav-link d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
+            <div class="avatar-sm">{{ (session.full_name or session.username)[0]|upper }}</div>
+            <span class="d-none d-lg-inline">{{ session.full_name or session.username }}</span>
+            <i class="bi bi-chevron-down small"></i>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end shadow">
+            <li><h6 class="dropdown-header">
+              <span class="badge role-badge role-{{ session.role }}">{{ session.role|title }}</span>
+            </h6></li>
+            <li><a class="dropdown-item" href="{{ url_for('profile') }}"><i class="bi bi-person me-2"></i>Profile</a></li>
+            {% if session.role == 'admin' %}
+            <li><a class="dropdown-item" href="{{ url_for('users') }}"><i class="bi bi-people me-2"></i>Users</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('logs') }}"><i class="bi bi-journal-text me-2"></i>Activity Logs</a></li>
+            {% endif %}
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ── SIDEBAR + CONTENT ───────────────────────────────── -->
+<div class="d-flex" id="wrapper">
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sidebar-inner">
+      <ul class="nav flex-column pt-2">
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+            <i class="bi bi-grid-fill"></i><span>Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['medicines','medicine_detail'] %}active{% endif %}" href="{{ url_for('medicines') }}">
+            <i class="bi bi-capsule"></i><span>Medicines</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='sales' %}active{% endif %}" href="{{ url_for('sales') }}">
+            <i class="bi bi-cart-check-fill"></i><span>Sales</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='alerts' %}active{% endif %}" href="{{ url_for('alerts') }}">
+            <i class="bi bi-exclamation-triangle-fill"></i><span>Alerts</span>
+            {% if nav_expiring + nav_low_stock > 0 %}
+            <span class="badge bg-danger rounded-pill ms-auto">{{ nav_expiring + nav_low_stock }}</span>
+            {% endif %}
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='barcode_page' %}active{% endif %}" href="{{ url_for('barcode_page') }}">
+            <i class="bi bi-upc-scan"></i><span>Barcode Scanner</span>
+          </a>
+        </li>
+        <li class="sidebar-divider">PHARMAIQ · AI</li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='pharmaiq.ai_chat' %}active{% endif %}" href="{{ url_for('pharmaiq.ai_chat') }}">
+            <i class="bi bi-stars"></i><span>Ask PharmaIQ</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='pharmaiq.ai_knowledge' %}active{% endif %}" href="{{ url_for('pharmaiq.ai_knowledge') }}">
+            <i class="bi bi-book"></i><span>Knowledge Base</span>
+          </a>
+        </li>
+        {% if session.role in ['admin','pharmacist'] %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='pharmaiq.ai_insights' %}active{% endif %}" href="{{ url_for('pharmaiq.ai_insights') }}">
+            <i class="bi bi-graph-up-arrow"></i><span>AI Insights</span>
+          </a>
+        </li>
+        {% endif %}
+        {% if session.role == 'admin' %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='pharmaiq.ai_audit' %}active{% endif %}" href="{{ url_for('pharmaiq.ai_audit') }}">
+            <i class="bi bi-shield-check"></i><span>AI Audit Trail</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='pharmaiq.ai_evaluation' %}active{% endif %}" href="{{ url_for('pharmaiq.ai_evaluation') }}">
+            <i class="bi bi-clipboard2-check"></i><span>AI Evaluation</span>
+          </a>
+        </li>
+        {% endif %}
+        <li class="sidebar-divider">OPERATIONS</li>
+        {% if session.role in ['admin','pharmacist'] %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='reports' %}active{% endif %}" href="{{ url_for('reports') }}">
+            <i class="bi bi-bar-chart-fill"></i><span>Reports</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('export_excel') }}">
+            <i class="bi bi-file-earmark-excel-fill"></i><span>Export Excel</span>
+          </a>
+        </li>
+        {% endif %}
+        {% if session.role == 'admin' %}
+        <li class="sidebar-divider">ADMIN</li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='users' %}active{% endif %}" href="{{ url_for('users') }}">
+            <i class="bi bi-people-fill"></i><span>User Management</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='logs' %}active{% endif %}" href="{{ url_for('logs') }}">
+            <i class="bi bi-journal-text"></i><span>Activity Logs</span>
+          </a>
+        </li>
+        {% endif %}
+        <li class="sidebar-divider">ACCOUNT</li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint=='profile' %}active{% endif %}" href="{{ url_for('profile') }}">
+            <i class="bi bi-person-circle"></i><span>Profile</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-danger-emphasis" href="{{ url_for('logout') }}">
+            <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div id="page-content">
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-container">
+        {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }} alert-dismissible fade show shadow-sm" role="alert">
+          <i class="bi bi-{% if cat=='success' %}check-circle{% elif cat=='danger' %}x-circle{% elif cat=='warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+          {{ msg }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Custom JS -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% block scripts %}{% endblock %}
+</body>
+</html>

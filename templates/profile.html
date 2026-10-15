@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h4 class="page-title"><i class="bi bi-person-circle me-2"></i>My Profile</h4>
+</div>
+
+<div class="row g-3 justify-content-center">
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body p-4 text-center">
+        <div class="avatar-xl mx-auto mb-3">{{ (user['full_name'] or user['username'])[0]|upper }}</div>
+        <h5 class="fw-bold">{{ user['full_name'] or user['username'] }}</h5>
+        <p class="text-muted">{{ user['email'] or 'No email set' }}</p>
+        <span class="badge role-badge role-{{ user['role'] }} px-3 py-2">{{ user['role']|title }}</span>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-header"><h6 class="mb-0 fw-semibold">Edit Profile</h6></div>
+      <div class="card-body p-4">
+        <form action="{{ url_for('profile') }}" method="post">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Full Name</label>
+            <input type="text" name="full_name" class="form-control" value="{{ user['full_name'] or '' }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email</label>
+            <input type="email" name="email" class="form-control" value="{{ user['email'] or '' }}">
+          </div>
+          <hr>
+          <h6 class="fw-semibold mb-3">Change Password <span class="text-muted fw-normal small">(leave blank to keep current)</span></h6>
+          <div class="mb-3">
+            <label class="form-label">Current Password</label>
+            <input type="password" name="current_password" class="form-control" placeholder="Enter current password">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">New Password</label>
+            <input type="password" name="new_password" class="form-control" placeholder="Enter new password">
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-save me-1"></i>Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h4 class="page-title"><i class="bi bi-grid-fill me-2"></i>Dashboard</h4>
+  <p class="text-muted mb-0">Welcome back, <strong>{{ session.full_name or session.username }}</strong>!</p>
+</div>
+
+<!-- ── STAT CARDS ──────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="stat-label">Total Medicines</p>
+            <h3 class="stat-value">{{ total_medicines }}</h3>
+          </div>
+          <div class="stat-icon bg-primary-subtle text-primary">
+            <i class="bi bi-capsule"></i>
+          </div>
+        </div>
+        <a href="{{ url_for('medicines') }}" class="stat-link text-primary">View all <i class="bi bi-arrow-right"></i></a>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="stat-label">Total Stock Units</p>
+            <h3 class="stat-value">{{ total_qty }}</h3>
+          </div>
+          <div class="stat-icon bg-success-subtle text-success">
+            <i class="bi bi-boxes"></i>
+          </div>
+        </div>
+        <span class="stat-link text-muted">Inventory units</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="stat-label">Inventory Value</p>
+            <h3 class="stat-value">${{ "%.2f"|format(total_value) }}</h3>
+          </div>
+          <div class="stat-icon bg-info-subtle text-info">
+            <i class="bi bi-currency-dollar"></i>
+          </div>
+        </div>
+        <span class="stat-link text-muted">Total worth</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="stat-label">Total Sales</p>
+            <h3 class="stat-value">${{ "%.2f"|format(total_sales) }}</h3>
+          </div>
+          <div class="stat-icon bg-warning-subtle text-warning">
+            <i class="bi bi-cart-check-fill"></i>
+          </div>
+        </div>
+        <a href="{{ url_for('sales') }}" class="stat-link text-warning">View sales <i class="bi bi-arrow-right"></i></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ALERT CARDS ──────────────────────────────────────── -->
+{% if expiring_count > 0 or low_stock_count > 0 %}
+<div class="row g-3 mb-4">
+  {% if expired_count > 0 %}
+  <div class="col-md-4">
+    <div class="alert alert-danger d-flex align-items-center gap-3 border-0 shadow-sm mb-0">
+      <i class="bi bi-x-octagon-fill fs-3 flex-shrink-0"></i>
+      <div>
+        <h6 class="mb-0 fw-bold">{{ expired_count }} Expired!</h6>
+        <small>Medicines past expiry date</small>
+      </div>
+      <a href="{{ url_for('alerts') }}" class="btn btn-danger btn-sm ms-auto">View</a>
+    </div>
+  </div>
+  {% endif %}
+  {% if expiring_count > 0 %}
+  <div class="col-md-4">
+    <div class="alert alert-warning d-flex align-items-center gap-3 border-0 shadow-sm mb-0">
+      <i class="bi bi-exclamation-triangle-fill fs-3 flex-shrink-0"></i>
+      <div>
+        <h6 class="mb-0 fw-bold">{{ expiring_count }} Expiring Soon</h6>
+        <small>Within next 30 days</small>
+      </div>
+      <a href="{{ url_for('alerts') }}" class="btn btn-warning btn-sm ms-auto">View</a>
+    </div>
+  </div>
+  {% endif %}
+  {% if low_stock_count > 0 %}
+  <div class="col-md-4">
+    <div class="alert alert-info d-flex align-items-center gap-3 border-0 shadow-sm mb-0">
+      <i class="bi bi-archive-fill fs-3 flex-shrink-0"></i>
+      <div>
+        <h6 class="mb-0 fw-bold">{{ low_stock_count }} Low Stock</h6>
+        <small>Below {{ 10 }} units threshold</small>
+      </div>
+      <a href="{{ url_for('alerts') }}" class="btn btn-info btn-sm ms-auto text-white">View</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- ── CHARTS + TABLE ──────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+        <h6 class="card-title fw-semibold mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>Sales — Last 7 Days</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="salesChart" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+        <h6 class="card-title fw-semibold mb-0"><i class="bi bi-pie-chart-fill me-2 text-success"></i>Stock Overview</h6>
+      </div>
+      <div class="card-body d-flex flex-column align-items-center justify-content-center">
+        <canvas id="stockChart" height="160" width="160"></canvas>
+        <div class="mt-3 w-100">
+          <div class="d-flex justify-content-between mb-1"><small>Normal Stock</small><strong class="text-success">{{ total_medicines - low_stock_count }}</strong></div>
+          <div class="d-flex justify-content-between mb-1"><small>Low Stock</small><strong class="text-warning">{{ low_stock_count }}</strong></div>
+          <div class="d-flex justify-content-between"><small>Expiring</small><strong class="text-danger">{{ expiring_count }}</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RECENT MEDICINES + LOGS ─────────────────────────── -->
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="card-title fw-semibold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Recent Medicines</h6>
+        <a href="{{ url_for('medicines') }}" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light"><tr>
+            <th>Medicine</th><th>Company</th><th>Qty</th><th>Expiry</th><th>Status</th>
+          </tr></thead>
+          <tbody>
+          {% for m in recent_meds %}
+          <tr>
+            <td>
+              <div class="fw-semibold">{{ m['medicine_name'] }}</div>
+              <small class="text-muted">{{ m['medicine_type'] }}</small>
+            </td>
+            <td><small>{{ m['company_name'] }}</small></td>
+            <td>
+              {% if m['product_qty'] <= 10 %}
+              <span class="badge bg-danger">{{ m['product_qty'] }}</span>
+              {% else %}
+              <span class="badge bg-success">{{ m['product_qty'] }}</span>
+              {% endif %}
+            </td>
+            <td><small>{{ m['exp_date'] }}</small></td>
+            <td>
+              {% if m['exp_date'] and m['exp_date'] < today %}
+              <span class="badge bg-danger">Expired</span>
+              {% elif m['exp_date'] and m['exp_date'] <= warn_date %}
+              <span class="badge bg-warning text-dark">Expiring</span>
+              {% else %}
+              <span class="badge bg-success">OK</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center text-muted py-3">No medicines yet</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="card-title fw-semibold mb-0"><i class="bi bi-activity me-2 text-success"></i>Recent Activity</h6>
+        {% if session.role == 'admin' %}
+        <a href="{{ url_for('logs') }}" class="btn btn-sm btn-outline-success">View All</a>
+        {% endif %}
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for log in recent_logs %}
+        <li class="list-group-item px-3 py-2">
+          <div class="d-flex gap-2 align-items-start">
+            <div class="log-dot mt-1 flex-shrink-0
+              {% if 'DELETE' in log['action'] %}bg-danger
+              {% elif 'ADD' in log['action'] or 'SALE' in log['action'] %}bg-success
+              {% elif 'UPDATE' in log['action'] %}bg-warning
+              {% else %}bg-info{% endif %}"></div>
+            <div>
+              <div class="small fw-semibold">{{ log['action']|replace('_',' ')|title }}</div>
+              <div class="x-small text-muted">{{ log['username'] }} • {{ log['created_at'][:16] }}</div>
+            </div>
+          </div>
+        </li>
+        {% else %}
+        <li class="list-group-item text-center text-muted py-3">No activity yet</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const labels = {{ chart_labels|safe }};
+const data   = {{ chart_data|safe }};
+
+new Chart(document.getElementById('salesChart'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Sales ($)',
+      data,
+      borderColor: '#0d6efd',
+      backgroundColor: 'rgba(13,110,253,0.1)',
+      borderWidth: 2,
+      fill: true,
+      tension: 0.4,
+      pointRadius: 4,
+      pointBackgroundColor: '#0d6efd'
+    }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } },
+             scales: { y: { beginAtZero: true } } }
+});
+
+new Chart(document.getElementById('stockChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Normal','Low Stock','Expiring'],
+    datasets: [{
+      data: [{{ total_medicines - low_stock_count }}, {{ low_stock_count }}, {{ expiring_count }}],
+      backgroundColor: ['#198754','#ffc107','#dc3545'],
+      borderWidth: 0
+    }]
+  },
+  options: { responsive: false, plugins: { legend: { display: false } }, cutout: '70%' }
+});
+</script>
+{% endblock %}

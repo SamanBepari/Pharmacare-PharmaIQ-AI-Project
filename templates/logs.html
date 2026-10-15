@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Activity Logs{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h4 class="page-title"><i class="bi bi-journal-text me-2"></i>Activity Logs</h4>
+  <p class="text-muted mb-0">{{ total }} total events</p>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-dark"><tr>
+        <th>#</th><th>User</th><th>Action</th><th>Details</th><th>IP</th><th>Time</th>
+      </tr></thead>
+      <tbody>
+      {% for log in logs %}
+      <tr>
+        <td><small class="text-muted">{{ log['id'] }}</small></td>
+        <td><span class="badge bg-secondary">{{ log['username'] }}</span></td>
+        <td>
+          <span class="badge
+            {% if 'DELETE' in log['action'] %}bg-danger
+            {% elif 'ADD' in log['action'] or 'SALE' in log['action'] %}bg-success
+            {% elif 'UPDATE' in log['action'] or 'EXPORT' in log['action'] %}bg-warning text-dark
+            {% elif 'LOGIN' in log['action'] %}bg-primary
+            {% elif 'LOGOUT' in log['action'] %}bg-secondary
+            {% else %}bg-info{% endif %}">
+            {{ log['action']|replace('_',' ') }}
+          </span>
+        </td>
+        <td><small>{{ log['details'] or '—' }}</small></td>
+        <td><code class="small">{{ log['ip_address'] }}</code></td>
+        <td><small>{{ log['created_at'][:16] }}</small></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center py-5 text-muted">No activity logs yet</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pages > 1 %}
+  <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+    <small class="text-muted">Page {{ page }} of {{ pages }}</small>
+    <nav>
+      <ul class="pagination pagination-sm mb-0">
+        {% if page > 1 %}<li class="page-item"><a class="page-link" href="?page={{ page-1 }}">«</a></li>{% endif %}
+        {% for p in range(1, pages+1) %}
+        <li class="page-item {% if p==page %}active{% endif %}"><a class="page-link" href="?page={{ p }}">{{ p }}</a></li>
+        {% endfor %}
+        {% if page < pages %}<li class="page-item"><a class="page-link" href="?page={{ page+1 }}">»</a></li>{% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
